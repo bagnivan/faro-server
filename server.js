@@ -1,6 +1,9 @@
 import express from "express";
 import fetch from "node-fetch";
 import cors from "cors";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -9,12 +12,13 @@ const BITESHIP_API_KEY = process.env.BITESHIP_API_KEY;
 app.use(cors());
 app.use(express.json());
 
-// ✅ Proxy endpoint (fix untuk Express 5)
-app.all("/api/biteship/*", async (req, res) => {
-  const path = req.params[0]; // ambil bagian setelah /api/biteship/
-  const url = `https://api.biteship.com/v1/${path}`;
-
+// ✅ FIXED: Tidak pakai wildcard — Express 5 compatible
+app.use("/api/biteship", async (req, res) => {
   try {
+    // Ambil path setelah "/api/biteship/"
+    const path = req.originalUrl.replace("/api/biteship/", "");
+    const url = `https://api.biteship.com/v1/${path}`;
+
     const response = await fetch(url, {
       method: req.method,
       headers: {
@@ -32,8 +36,9 @@ app.all("/api/biteship/*", async (req, res) => {
   }
 });
 
+// ✅ Test route
 app.get("/", (req, res) => {
-  res.send("🚀 FARO Biteship Proxy Server is running!");
+  res.send("🚀 FARO Biteship Proxy Server is running! (Express v5 FIXED)");
 });
 
 app.listen(PORT, () => {
