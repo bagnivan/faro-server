@@ -1,46 +1,50 @@
 import express from "express";
 import fetch from "node-fetch";
-import cors from "cors";
 import dotenv from "dotenv";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 10000;
-const BITESHIP_API_KEY = process.env.BITESHIP_API_KEY;
-
 app.use(cors());
 app.use(express.json());
 
-// ✅ FIXED: Tidak pakai wildcard — Express 5 compatible
-app.use("/api/biteship", async (req, res) => {
-  try {
-    // Ambil path setelah "/api/biteship/"
-    const path = req.originalUrl.replace("/api/biteship/", "");
-    const url = `https://api.biteship.com/v1/${path}`;
+// Pastikan kamu punya API Key di Render Environment
+const BITESHIP_API_KEY = process.env.BITESHIP_API_KEY || "68f88b0a638ffc001291dbe2";
 
-    const response = await fetch(url, {
+// Proxy untuk semua request ke Biteship API
+app.all("/api/biteship/*", async (req, res) => {
+  try {
+    const targetUrl = `https://api.biteship.com/v1/${req.params[0]}`;
+
+    const options = {
       method: req.method,
       headers: {
         "Content-Type": "application/json",
         Authorization: BITESHIP_API_KEY,
       },
-      body: req.method !== "GET" ? JSON.stringify(req.body) : undefined,
-    });
+    };
 
+    if (req.method !== "GET" && req.body) {
+      options.body = JSON.stringify(req.body);
+    }
+
+    const response = await fetch(targetUrl, options);
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (error) {
-    console.error("Proxy Error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Biteship proxy error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error (Proxy Biteship)",
+    });
   }
 });
 
-// ✅ Test route
+// Default route (buat testing aja)
 app.get("/", (req, res) => {
-  res.send("🚀 FARO Biteship Proxy Server is running! (Express v5 FIXED)");
+  res.json({ message: "✅ FARO Server is running!" });
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Server jalan di port ${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
