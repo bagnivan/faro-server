@@ -9,9 +9,9 @@ const BITESHIP_API_KEY = process.env.BITESHIP_API_KEY;
 app.use(cors());
 app.use(express.json());
 
-// ✅ Route universal proxy Biteship (FIXED)
-app.all("/api/biteship/:path(*)", async (req, res) => {
-  const { path } = req.params;
+// ✅ Proxy endpoint (fix untuk Express 5)
+app.all("/api/biteship/*", async (req, res) => {
+  const path = req.params[0]; // ambil bagian setelah /api/biteship/
   const url = `https://api.biteship.com/v1/${path}`;
 
   try {
